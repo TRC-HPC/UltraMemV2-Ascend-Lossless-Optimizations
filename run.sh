@@ -1,0 +1,44 @@
+sh launch.sh ${CONFIG_PATH} \
+--save_folder=${SAVE_DIR} \
+--run_name=${run_name} \
+--save_overwrite=true \
+--mount_common_hdfs=true \
+--fsdp.sharding_strategy=NO_SHARD \
+--canceled_check_interval=9999999 \
+--global_indices_file=${CODE_DIR}/global_indices.npy \
+--load_path=${CUR_CKPT_PATH} \
+--model.init_std=0.02282177322938192 \
+--model.init_fn="full_megatron" \
+--model.d_model=768 \
+--model.n_layers=20 \
+--model.n_heads=12 \
+--model.n_kv_heads=12 \
+--model.weight_tying=true \
+--max_duration=5e11T \
+--scheduler.t_warmup=1e10 \
+--scheduler.t_max=5e11 \
+--device_train_microbatch_size=2 \
+--global_train_batch_size=4 \
+--save_interval=-1 \
+--eval_interval=1000 \
+--save_num_checkpoints_to_keep=-1 \
+\
+--model.block_type='sequential' \
+--model.mlp_hidden_size=4992 \
+\
+--optimizer.mem_value_lr_times=4.0 \
+--optimizer.mem_value_lr_max_steps_rate=1.0 \
+--model.mem_insert_way='full' \
+--model.mem_knum=360 \
+--model.mem_kdim=192 \
+--model.mem_vdim=192 \
+--model.mem_pre_vdim=192 \
+--model.mem_knn=32 \
+--model.mem_head=1 \
+--model.mem_share_ratio=0.5 \
+--model.mem_type='ultramem_v2' \
+--model.mem_value_expand_time=1 \
+\
+--distributed_strategy=ddp \
+--model.init_device='cuda' \
+--save_interval_unsharded=100 

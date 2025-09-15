@@ -1,0 +1,42 @@
+sh launch.sh ${CONFIG_PATH} \
+--save_folder=${SAVE_DIR} \
+--run_name=${run_name} \
+--save_overwrite=true \
+--mount_common_hdfs=true \
+--fsdp.sharding_strategy=NO_SHARD \
+--canceled_check_interval=9999999 \
+--global_indices_file=${CODE_DIR}/global_indices.npy \
+--load_path=${CUR_CKPT_PATH} \
+--device_train_microbatch_size=2 \
+--save_interval=1000 \
+--eval_interval=1000 \
+--console_log_interval=50 \
+--save_num_checkpoints_to_keep=20 \
+\
+--model.block_type='sequential' \
+--model.mlp_hidden_size=11264 \
+\
+--optimizer.mem_value_lr_times=1.0 \
+--optimizer.mem_value_lr_max_steps_rate=1.0 \
+--model.mem_insert_way='full' \
+--model.mem_knum=128 \
+--model.mem_kdim=512 \
+--model.mem_vdim=768 \
+--model.mem_pre_vdim=256 \
+--model.mem_knn=32 \
+--model.mem_head=1 \
+--model.mem_share_ratio=0.0625 \
+--model.mem_type='ultramem_v2' \
+--model.mem_value_expand_time=1 \
+--model.mem_q_for_each_tucker_rank=true \
+--model.mem_key_expand_time=2 \
+--model.mem_output_dropout_rate=0.0 \
+\
+--distributed_strategy=ddp \
+--model.init_device='cuda' \
+--optimizer.metrics_log_interval=50 \
+--model.mem_log_interval=50 \
+--save_interval_unsharded=1000 \
+--wandb.log_interval=50 \
+--model.vertical_parallel=true \
+--model.mem_parallel_size=4

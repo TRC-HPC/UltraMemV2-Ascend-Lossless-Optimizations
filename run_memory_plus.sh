@@ -1,0 +1,46 @@
+sh launch.sh ${CONFIG_PATH} \
+--save_folder=${SAVE_DIR} \
+--run_name=${run_name} \
+--save_overwrite=true \
+--mount_common_hdfs=true \
+--fsdp.sharding_strategy=NO_SHARD \
+--canceled_check_interval=9999999 \
+--global_indices_file=${CODE_DIR}/global_indices.npy \
+--load_path=${CUR_CKPT_PATH} \
+--model.init_std=0.02282177322938192 \
+--model.init_fn="full_megatron" \
+--model.d_model=768 \
+--model.n_layers=20 \
+--model.n_heads=12 \
+--model.n_kv_heads=12 \
+--model.weight_tying=true \
+--max_duration=5e11T \
+--scheduler.t_warmup=1e10 \
+--scheduler.t_max=5e11 \
+--device_train_microbatch_size=2 \
+--global_train_batch_size=16 \
+--save_interval=1000 \
+--eval_interval=1000 \
+--save_num_checkpoints_to_keep=-1 \
+--console_log_interval=1 \
+\
+--model.block_type='sequential' \
+--model.mlp_hidden_size=6016 \
+\
+--optimizer.mem_value_lr_times=4.0 \
+--optimizer.mem_value_lr_max_steps_rate=1.0 \
+--model.mem_insert_way='4:4/8:8/12:12/16:16' \
+--model.mem_knum=1138 \
+--model.mem_kdim=384 \
+--model.mem_vdim=768 \
+--model.mem_knn=80 \
+--model.mem_head=2 \
+--model.mem_type='memory_plus' \
+\
+--distributed_strategy=ddp \
+--model.init_device='cuda' \
+--optimizer.metrics_log_interval=10 \
+--model.mem_log_interval=10 \
+--save_interval_unsharded=1000 \
+--ddp.grad_sync_mode=micro_batch \
+--ddp.find_unused_params=true

@@ -1,0 +1,25 @@
+sh launch.sh ${CONFIG_PATH} \
+--save_folder=${SAVE_DIR} \
+--run_name=${run_name} \
+--save_overwrite=true \
+--mount_common_hdfs=true \
+--fsdp.sharding_strategy=FULL_SHARD \
+--canceled_check_interval=9999999 \
+--global_indices_file=${CODE_DIR}/global_indices.npy \
+--load_path=${CUR_CKPT_PATH} \
+--model.init_std=0.02282177322938192 \
+--model.init_fn="full_megatron" \
+--model.d_model=768 \
+--model.n_layers=20 \
+--model.n_heads=12 \
+--model.n_kv_heads=12 \
+--model.weight_tying=true \
+--max_duration=5e11T \
+--scheduler.t_warmup=1e10 \
+--scheduler.t_max=5e11 \
+--device_train_microbatch_size=2 \
+--global_train_batch_size=16 \
+--save_interval=1000 \
+--eval_interval=1000 \
+--save_num_checkpoints_to_keep=-1 \
+--model.mem_insert_way='no_mem'
