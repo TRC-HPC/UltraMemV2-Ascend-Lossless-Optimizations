@@ -1,3 +1,11 @@
+import os
+USE_NPU = os.environ.get("USE_NPU") == "True"
+try:
+    import torch_npu
+    USE_NPU = torch.npu.is_available()
+except ImportError:
+    pass
+    
 import torch
 from torch import nn
 import numpy as np
@@ -417,7 +425,13 @@ class UltraMemLayerV2(torch.nn.Module):
         return best_scores, best_indices, balance_reg_loss_key
 
     def ImplicitValueExpansionParallel(self, best_scores, best_indice, pre_input, all_value_num, value_num, offset):
-        from fuse_ops.fused_index import XperfGlu, FusedLookup
+        if not USE_NPU:  
+            from fuse_ops.fused_index import XperfGlu, FusedLookup
+        else:  # NPU does not support CUDA kernels
+            from .pytorch_kernels import pytorch_xperf_glu as XperfGlu, pytorch_fused_lookup as FusedLookup
+            XperfGlu.apply = XperfGlu
+            FusedLookup.apply = FusedLookup
+
         from .memory_parallel import gather_from_memory_layer_parallel_region, AllReduceInMemGroup, tucker_multihead_gather_score, get_memory_layer_parallel_world_size, EmbeddingAll2AllSingle, get_memory_layer_parallel_group
         best_indice = best_indice.to(torch.int32)
         entry_num = best_indice.shape[0]
@@ -483,7 +497,7 @@ class UltraMemLayerV2(torch.nn.Module):
         return concated_output[0:entry_num]
 
     def ImplicitValueExpansion(self, best_scores, best_indice, pre_input, all_value_num, value_num, offset):
-        if True:
+        if not USE_NPU:  # NPU does not support CUDA kernels
             from fuse_ops.fused_index import XperfGlu, FusedLookup
             if pre_input is not None:
                 pre_score = XperfGlu.apply(best_indice.to(torch.int32), self.pre_values_for_look_up, pre_input, all_value_num, value_num, offset, 1, 0, False)
