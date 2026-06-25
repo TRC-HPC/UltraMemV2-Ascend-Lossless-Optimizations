@@ -280,8 +280,8 @@ class UltraMemLayerV2(torch.nn.Module):
     def post_load_init(self):
         if USE_NPU:
             if not self.has_value:        
-                self.tucker_core_uv = torch.nn.Parameter(torch.stack([module.tucker_core_u.flatten(), module.tucker_core_v.flatten()], dim=-1).contiguous())
-                self.tucker_core_stacked = torch.nn.Parameter(torch.stack(tuple(module.tucker_core), dim=0).contiguous())
+                self.tucker_core_uv = torch.nn.Parameter(torch.stack([self.tucker_core_u.flatten(), self.tucker_core_v.flatten()], dim=-1).contiguous())
+                self.tucker_core_stacked = torch.nn.Parameter(torch.stack(tuple(self.tucker_core), dim=0).contiguous())
             else:
                 self.pre_values_for_look_up.data = self.pre_values_for_look_up.data.to(torch.bfloat16)
                 self.values_for_look_up.data = self.values_for_look_up.data.to(torch.bfloat16)
