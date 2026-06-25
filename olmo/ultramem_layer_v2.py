@@ -503,7 +503,12 @@ class UltraMemLayerV2(torch.nn.Module):
         max_entry_num = max_token_num // token_per_entry
         best_indice = best_indice.view(-1)
         if best_indice.numel() < max_token_num:
-            best_indice = F.pad(best_indice, (0, max_token_num - best_indice.numel()), value=padding_idx)
+            if not USE_NPU:
+                best_indice = F.pad(best_indice, (0, max_token_num - best_indice.numel()), value=padding_idx)
+            else:
+                pad_size = max_token_num - best_indice.numel()
+                random_padding = torch.randint(0, max_token_num, (pad_size,), dtype=best_indice.dtype, device=best_indice.device)
+                best_indice = torch.cat([best_indice, random_padding])
         else:
             best_indice = best_indice
 
