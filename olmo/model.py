@@ -2011,7 +2011,7 @@ class OLMo(nn.Module):
             scores=scores,  # type: ignore[arg-type]
         )
 
-    def post_load_init(self):
+    def trigger_post_load_inits(self):
         def fn(m: nn.Module):
             # Only call on modules that actually define this method
             if hasattr(m, "post_load_init") and callable(m.post_load_init):
@@ -2020,7 +2020,7 @@ class OLMo(nn.Module):
 
     def load_state_dict(self, *args, **kwargs):
         result = super().load_state_dict(*args, **kwargs)
-        self.post_load_init()
+        self.trigger_post_load_inits()
         return result
 
     @classmethod
