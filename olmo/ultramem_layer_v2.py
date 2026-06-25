@@ -313,7 +313,8 @@ class UltraMemLayerV2(torch.nn.Module):
         qtr = self.tucker_rank if self.mem_q_for_each_tucker_rank else 1
         query = query.view(bs, 2, qtr, self.kdim)             # output shape: [bs, 2, kdim]
         query = self.query_norm(query)
-        query = query.view(bs, 2, qtr*self.kdim)
+        if not USE_NPU:
+            query = query.view(bs, 2, qtr*self.kdim)
 
         keys = self.keys_norm(self.keys.transpose(3,4)).transpose(3,4)
 
@@ -367,16 +368,26 @@ class UltraMemLayerV2(torch.nn.Module):
         nhead_share_query = 2
 
         # generate score
-        scores1_refine = []
-        scores2_refine = []
-        for key_idx in range(tucker_rank):
-            scores1_refine_, scores2_refine_ = ParallelKeyQueryInnerProduct.apply(
-                query, torch.select(keys,-1,key_idx), bs, n_keys, head_num, nhead_share_query
+        if not USE_NPU or :
+            scores1_refine = []
+            scores2_refine = []
+            for key_idx in range(tucker_rank):
+                scores1_refine_, scores2_refine_ = ParallelKeyQueryInnerProduct.apply(
+                    query, torch.select(keys,-1,key_idx), bs, n_keys, head_num, nhead_share_query
+                )
+                scores1_refine.append(scores1_refine_)
+                scores2_refine.append(scores2_refine_)
+            scores1_refine = torch.stack(scores1_refine, dim=-1)
+            scores2_refine = torch.stack(scores2_refine, dim=-1)
+        else:
+            assert nhead_share_query <= 2, "This optimization has only been implemented for nhead_share_query <= 2.  Otherwise, you need to replace every chunk (chunk.size=nhead_share_query) of nhead_share_query heads with the first head in that chunk to maintain correctness"
+            # Note: Due to different contraction order in the einsum than the original, there is a slight error in scores_refine.  This may be eliminated by casting query and keys to float16 (not bfloat16!) first for the extra required mantissa bits
+            scores_refine = einops.einsum(
+                query.reshape(bs, 2, qtr, self.kdim)[:,:,0,:].unsqueeze(2),
+                keys, 
+                "bs tensor_rank heads kdim, heads tensor_rank n_keys kdim tucker_rank -> bs heads n_keys tucker_rank tensor_rank"
             )
-            scores1_refine.append(scores1_refine_)
-            scores2_refine.append(scores2_refine_)
-        scores1_refine = torch.stack(scores1_refine, dim=-1)
-        scores2_refine = torch.stack(scores2_refine, dim=-1)
+            scores1_refine, scores2_refine = map(partial(torch.squeeze, dim=-1), scores_refine.split(1, dim=-1))
 
         scores1 = (scores1_refine * self.tucker_core_u).sum(-1)#.detach()
         scores2 = (scores2_refine * self.tucker_core_v).sum(-1)#.detach()
