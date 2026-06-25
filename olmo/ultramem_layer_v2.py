@@ -275,9 +275,13 @@ class UltraMemLayerV2(torch.nn.Module):
             self.score_topn_mean = None
 
     def post_load_init(self):
-        if USE_NPU and not self.has_value:        
-            self.tucker_core_uv = torch.nn.Parameter(torch.stack([module.tucker_core_u.flatten(), module.tucker_core_v.flatten()], dim=-1).contiguous())
-            self.tucker_core_stacked = torch.nn.Parameter(torch.stack(tuple(module.tucker_core), dim=0).contiguous())
+        if USE_NPU:
+            if not self.has_value:        
+                self.tucker_core_uv = torch.nn.Parameter(torch.stack([module.tucker_core_u.flatten(), module.tucker_core_v.flatten()], dim=-1).contiguous())
+                self.tucker_core_stacked = torch.nn.Parameter(torch.stack(tuple(module.tucker_core), dim=0).contiguous())
+            else:
+                self.pre_values_for_look_up.data = self.pre_values_for_look_up.data.to(torch.bfloat16)
+                self.values_for_look_up.data = self.values_for_look_up.data.to(torch.bfloat16)
         
     def load_state_dict(self, *args **kwargs):
         result = super().load_state_dict(*args, **kwargs)
