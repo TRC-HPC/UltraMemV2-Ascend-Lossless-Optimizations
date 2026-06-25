@@ -1,3 +1,4 @@
+import torch 
 import os
 USE_NPU = os.environ.get("USE_NPU") == "True"
 try:
@@ -5,8 +6,10 @@ try:
     USE_NPU = torch.npu.is_available()
 except ImportError:
     pass
-    
-import torch
+
+from functools import partial
+import einops
+
 from torch import nn
 import numpy as np
 from .model import LayerNormBase
@@ -283,7 +286,7 @@ class UltraMemLayerV2(torch.nn.Module):
                 self.pre_values_for_look_up.data = self.pre_values_for_look_up.data.to(torch.bfloat16)
                 self.values_for_look_up.data = self.values_for_look_up.data.to(torch.bfloat16)
         
-    def load_state_dict(self, *args **kwargs):
+    def load_state_dict(self, *args, **kwargs):
         result = super().load_state_dict(*args, **kwargs)
         self.post_load_init()
         return result
@@ -380,11 +383,13 @@ class UltraMemLayerV2(torch.nn.Module):
 
     def TuckerDecomposedQueryKeyRetrieval(self, query, keys):
         bs = query.shape[0]
+        if USE_NPU:
+            qtr = query.shape[-2]
         head_num, _, n_keys, kdim, tucker_rank = keys.shape
         nhead_share_query = 2
 
         # generate score
-        if not USE_NPU or :
+        if not USE_NPU:
             scores1_refine = []
             scores2_refine = []
             for key_idx in range(tucker_rank):
