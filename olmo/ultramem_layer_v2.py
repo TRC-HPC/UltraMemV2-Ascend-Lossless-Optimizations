@@ -557,7 +557,6 @@ class UltraMemLayerV2(torch.nn.Module):
                 best_scores = best_scores.squeeze(dim=-1)
             output = FusedLookup.apply(best_indice.to(torch.int32), self.values_for_look_up, best_scores, 0, all_value_num, value_num, offset, self.fake_value_expand_time, False)
         else:
-            group_indice = best_indice // value_num
             real_indice = ((best_indice % value_num) + offset) % all_value_num
 
             bs = best_scores.shape[0]
